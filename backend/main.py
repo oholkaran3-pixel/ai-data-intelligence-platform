@@ -63,8 +63,66 @@ def serve_dashboard():
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- Navigation Bar -->
-  <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur px-8 py-4 flex items-center justify-between sticky top-0 z-50">
+  <!-- ================= AUTHENTICATION MODAL OVERLAY ================= -->
+  <div id="authModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative">
+      <div class="flex items-center space-x-3 mb-6">
+        <div class="h-12 w-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg shadow-blue-500/30">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-white tracking-tight">AI Data Intelligence</h2>
+          <p class="text-xs text-slate-400">Secure Multi-Tenant SaaS Workspace</p>
+        </div>
+      </div>
+
+      <!-- Auth Mode Switcher Tabs -->
+      <div class="flex border-b border-slate-800 mb-6">
+        <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-blue-400 border-b-2 border-blue-500 transition">
+          Sign In
+        </button>
+        <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition">
+          Create Account
+        </button>
+      </div>
+
+      <!-- Error / Notice Box -->
+      <div id="authErrorMsg" class="hidden mb-4 p-3 bg-rose-950/50 border border-rose-500/40 rounded-xl text-xs text-rose-300 flex items-center space-x-2">
+        <i class="fa-solid fa-circle-exmark"></i>
+        <span id="authErrorText">Invalid credentials</span>
+      </div>
+
+      <!-- Form -->
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div id="fullNameGroup" class="hidden">
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Full Name</label>
+          <input type="text" id="authFullName" placeholder="e.g. Sarah Jenkins" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500" />
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Corporate Email</label>
+          <input type="email" id="authEmail" value="admin@intel.ai" required placeholder="name@company.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500" />
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
+          <input type="password" id="authPassword" value="AdminPassword123!" required placeholder="Enter password" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500" />
+        </div>
+
+        <button type="submit" id="authSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/30 mt-6">
+          <span id="authSubmitText">Access Private Workspace</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+
+      <div class="mt-6 pt-4 border-t border-slate-800/80 text-[11px] text-slate-500 text-center">
+        <i class="fa-solid fa-lock text-emerald-400 mr-1"></i> Data Isolation Guaranteed · Zero Cross-Tenant Access
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur px-8 py-4 flex items-center justify-between sticky top-0 z-40">
     <div class="flex items-center space-x-3">
       <div class="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-blue-500/20">
         <i class="fa-solid fa-brain"></i>
@@ -79,24 +137,29 @@ def serve_dashboard():
     </div>
     
     <div class="flex items-center space-x-4">
-      <div id="authStatus" class="text-xs text-slate-300 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-        <i class="fa-solid fa-user-shield text-blue-400 mr-1.5"></i> Connected: <span id="userEmail" class="font-semibold text-white">admin@intel.ai</span>
+      <div id="authStatus" class="text-xs text-slate-300 bg-slate-800/80 px-3.5 py-1.5 rounded-lg border border-slate-700 flex items-center space-x-2">
+        <i class="fa-solid fa-user-shield text-blue-400"></i>
+        <span>User: <strong id="userEmail" class="text-white">Connecting...</strong></span>
       </div>
+      <button onclick="handleUserLogout()" class="text-xs text-rose-400 hover:text-rose-300 bg-slate-800/80 hover:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1.5">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Sign Out</span>
+      </button>
       <a href="/docs" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">
         <i class="fa-solid fa-book mr-1 text-slate-400"></i> API Docs
       </a>
     </div>
   </header>
 
-  <!-- Main Grid Workspace -->
+  <!-- ================= MAIN WORKSPACE CANVAS ================= -->
   <div class="flex-1 flex overflow-hidden">
-    <!-- Sidebar: Workspaces & Data Ingest -->
+    <!-- Sidebar -->
     <aside class="w-80 border-r border-slate-800 bg-slate-900/40 p-5 flex flex-col justify-between overflow-y-auto custom-scroll">
       <div class="space-y-6">
         <div>
           <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Active Workspace</h2>
-          <select id="projectSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-            <option value="1">Supply Chain & Operations</option>
+          <select id="projectSelect" onchange="onWorkspaceChange()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+            <!-- Dynamically populated per user -->
           </select>
         </div>
 
@@ -129,7 +192,7 @@ def serve_dashboard():
         <!-- Verified Datasets Switcher -->
         <div>
           <div class="flex items-center justify-between mb-2">
-            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Your Datasets</h2>
+            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Your Private Datasets</h2>
             <span class="text-[10px] text-slate-500">Click to switch</span>
           </div>
           <div id="datasetList" class="space-y-2">
@@ -303,51 +366,173 @@ def serve_dashboard():
   </div>
 
   <script>
-    let currentToken = null;
-    let activeProjectId = 1;
+    let currentToken = localStorage.getItem('token') || null;
+    let currentUser = null;
+    let authMode = 'login';
+    let userProjects = [];
+    let activeProjectId = null;
     let activeDatasetId = null;
-    let activeDatasets = [
-      {"id": 2, "project_id": 1, "name": "EMRECo Red Bull Data", "original_filename": "EMRECo Red Bull Data.xlsx", "file_format": "xlsx", "row_count": 150, "column_count": 11, "quality_score": 81.5, "quality_summary": {"score": 81.5, "grade": "Good", "total_rows": 150, "total_columns": 11, "total_missing_cells": 203, "missing_ratio_pct": 12.3, "duplicate_rows": 0, "duplicate_ratio_pct": 0.0, "total_outliers_detected": 0, "score_breakdown": {"base_score": 100.0, "missing_penalty": 18.5, "duplicate_penalty": 0.0, "outlier_penalty": 0.0}}, "current_version": 1},
-      {"id": 1, "project_id": 1, "name": "sample_sales_data", "original_filename": "sample_sales_data.csv", "file_format": "csv", "row_count": 15, "column_count": 7, "quality_score": 96.0, "quality_summary": {"score": 96.0, "grade": "Excellent", "total_rows": 15, "total_columns": 7, "total_missing_cells": 0, "missing_ratio_pct": 0.0, "duplicate_rows": 0, "duplicate_ratio_pct": 0.0, "total_outliers_detected": 6, "score_breakdown": {"base_score": 100.0, "missing_penalty": 0.0, "duplicate_penalty": 0.0, "outlier_penalty": 4.0}}, "current_version": 2}
-    ];
+    let activeDatasets = [];
     let chatMemory = {};
 
-    async function initAuth() {
-      try {
-        console.log("Authenticating...");
-        const res = await fetch('/api/v1/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: 'admin@intel.ai', password: 'AdminPassword123!' })
-        });
-        const data = await res.json();
-        console.log("Auth response:", data);
-        if (data.access_token) {
-          currentToken = data.access_token;
-          await loadDatasets();
-        } else {
-          console.error("Login did not return access_token:", data);
-        }
-      } catch (err) {
-        console.error("Auth error:", err);
+    function switchAuthTab(mode) {
+      authMode = mode;
+      const tabLogin = document.getElementById('tabLogin');
+      const tabRegister = document.getElementById('tabRegister');
+      const fullNameGroup = document.getElementById('fullNameGroup');
+      const submitText = document.getElementById('authSubmitText');
+      const errorBox = document.getElementById('authErrorMsg');
+      errorBox.classList.add('hidden');
+
+      if (mode === 'login') {
+        tabLogin.className = "flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-blue-400 border-b-2 border-blue-500 transition";
+        tabRegister.className = "flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition";
+        fullNameGroup.classList.add('hidden');
+        submitText.innerText = "Access Private Workspace";
+      } else {
+        tabRegister.className = "flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-blue-400 border-b-2 border-blue-500 transition";
+        tabLogin.className = "flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition";
+        fullNameGroup.classList.remove('hidden');
+        submitText.innerText = "Create New Account & Private Workspace";
       }
     }
 
-    async function loadDatasets(preferredDatasetId = null) {
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const fullName = document.getElementById('authFullName').value.trim();
+      const errorBox = document.getElementById('authErrorMsg');
+      const errorText = document.getElementById('authErrorText');
+      const submitBtn = document.getElementById('authSubmitBtn');
+
+      errorBox.classList.add('hidden');
+      submitBtn.disabled = true;
+
       try {
-        console.log("Fetching datasets for project:", activeProjectId, "Token:", currentToken ? "Present" : "Missing");
+        const endpoint = authMode === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/register';
+        const payload = authMode === 'login' 
+          ? { email, password } 
+          : { email, password, full_name: fullName || email.split('@')[0], role: 'regular_user' };
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Authentication failed');
+        }
+
+        currentToken = data.access_token;
+        currentUser = data.user;
+        localStorage.setItem('token', currentToken);
+        localStorage.setItem('user', JSON.stringify(currentUser));
+
+        // Hide Modal and Load User's Private Workspace
+        document.getElementById('authModal').classList.add('hidden');
+        document.getElementById('userEmail').innerText = currentUser.email;
+        await loadUserProjects();
+      } catch (err) {
+        errorBox.classList.remove('hidden');
+        errorText.innerText = err.message;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
+    function handleUserLogout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      currentToken = null;
+      currentUser = null;
+      userProjects = [];
+      activeProjectId = null;
+      activeDatasets = [];
+      activeDatasetId = null;
+      chatMemory = {};
+
+      // Reset UI to clean state
+      document.getElementById('datasetList').innerHTML = '';
+      document.getElementById('metricScore').innerText = '--';
+      document.getElementById('metricGrade').innerText = 'Awaiting dataset selection';
+      document.getElementById('metricRows').innerText = '--';
+      document.getElementById('metricCols').innerText = '-- Columns';
+      document.getElementById('metricFormat').innerText = '--';
+      document.getElementById('metricVersion').innerText = 'Current Version: v1';
+      document.getElementById('aiChatFeed').innerHTML = '';
+      document.getElementById('plotlyChartContainer').classList.add('hidden');
+      document.getElementById('dataPreviewBox').classList.add('hidden');
+
+      // Show Auth Modal
+      document.getElementById('authModal').classList.remove('hidden');
+    }
+
+    async function loadUserProjects() {
+      if (!currentToken) return;
+      try {
+        const res = await fetch('/api/v1/projects', {
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+        userProjects = await res.json();
+        const sel = document.getElementById('projectSelect');
+        sel.innerHTML = '';
+
+        if (!userProjects || userProjects.length === 0) {
+          // Auto create a project if user doesn't have one
+          const newProjRes = await fetch('/api/v1/projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` },
+            body: JSON.stringify({ title: 'My Analytics Project', description: 'Private Workspace' })
+          });
+          const createdProj = await newProjRes.json();
+          userProjects = [createdProj];
+        }
+
+        userProjects.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.innerText = p.title;
+          sel.appendChild(opt);
+        });
+
+        activeProjectId = userProjects[0].id;
+        await loadDatasets();
+      } catch (err) {
+        console.error("Error loading user projects:", err);
+      }
+    }
+
+    async function onWorkspaceChange() {
+      const sel = document.getElementById('projectSelect');
+      activeProjectId = parseInt(sel.value);
+      await loadDatasets();
+    }
+
+    async function loadDatasets(preferredDatasetId = null) {
+      if (!currentToken || !activeProjectId) return;
+      try {
         const res = await fetch(`/api/v1/datasets?project_id=${activeProjectId}`, {
           headers: { 'Authorization': `Bearer ${currentToken}` }
         });
         activeDatasets = await res.json();
-        console.log("Datasets loaded from API:", activeDatasets);
         renderDatasetList();
 
         if (activeDatasets && activeDatasets.length > 0) {
           const targetId = preferredDatasetId || activeDatasets[0].id;
           selectDataset(targetId);
         } else {
-          console.log("No datasets returned for this project.");
+          // Clean canvas when project has no datasets
+          activeDatasetId = null;
+          document.getElementById('metricScore').innerText = '--';
+          document.getElementById('metricGrade').innerText = 'No datasets uploaded in this workspace';
+          document.getElementById('metricRows').innerText = '0';
+          document.getElementById('metricCols').innerText = '0 Columns';
+          document.getElementById('metricFormat').innerText = 'None';
+          document.getElementById('aiChatFeed').innerHTML = '<div class="text-[11px] text-slate-500 italic p-3 bg-slate-950/40 border border-slate-800/50 rounded-xl">Upload a dataset to start autonomous analysis.</div>';
+          document.getElementById('plotlyChartContainer').classList.add('hidden');
         }
       } catch (e) {
         console.error("Failed to load datasets:", e);
@@ -380,14 +565,12 @@ def serve_dashboard():
       });
     }
 
-    // Switch dataset and FRESHEN the workspace
     function selectDataset(id) {
       activeDatasetId = id;
       renderDatasetList();
       const dataset = activeDatasets.find(d => d.id === id);
       if (!dataset) return;
 
-      // Update header metrics
       document.getElementById('metricScore').innerText = dataset.quality_score + '%';
       document.getElementById('metricGrade').innerText = 'Audit Grade: ' + (dataset.quality_summary?.grade || 'Verified');
       document.getElementById('metricRows').innerText = (dataset.row_count || 0).toLocaleString();
@@ -395,10 +578,7 @@ def serve_dashboard():
       document.getElementById('metricFormat').innerText = dataset.original_filename;
       document.getElementById('metricVersion').innerText = `Current Version: v${dataset.current_version}`;
 
-      // Reset / Clear chat feed for this new file context
       renderChatFeedForActiveDataset();
-
-      // Load tabular preview
       loadTabularPreview(id);
     }
 
@@ -475,7 +655,6 @@ def serve_dashboard():
         feed.appendChild(box);
       });
 
-      // Render chart of last message if present
       const lastWithChart = [...messages].reverse().find(m => m.chart_spec);
       if (lastWithChart) {
         renderChart(lastWithChart.chart_spec);
@@ -512,16 +691,6 @@ def serve_dashboard():
       btn.classList.add('opacity-50');
 
       try {
-        if (!currentToken) {
-          const authRes = await fetch('/api/v1/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: 'admin@intel.ai', password: 'AdminPassword123!' })
-          });
-          const authData = await authRes.json();
-          currentToken = authData.access_token;
-        }
-
         const res = await fetch('/api/v1/datasets/upload', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${currentToken}` },
@@ -537,10 +706,7 @@ def serve_dashboard():
         fb.className = "text-[11px] text-emerald-400 mt-2 p-2 bg-emerald-950/40 border border-emerald-800/50 rounded-lg";
         fb.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Successfully Analyzed <b>${newD.name}</b> (${newD.quality_score}% Quality, ${newD.row_count} rows)`;
         
-        // Reset file input
         input.value = '';
-
-        // Reload datasets list from server and immediately select the new one
         await loadDatasets(newD.id);
       } catch (err) {
         fb.className = "text-[11px] text-rose-400 mt-2 p-2 bg-rose-950/40 border border-rose-800/50 rounded-lg";
@@ -629,7 +795,6 @@ def serve_dashboard():
       }
     }
 
-    // 1-Click Launchers
     async function launchExcel() {
       await generateAndOpenReport('xlsx');
     }
@@ -642,10 +807,10 @@ def serve_dashboard():
       await generateAndOpenReport('pdf');
     }
 
-    async function launchPowerBI() {{
+    async function launchPowerBI() {
       await generateAndOpenReport('xlsx');
       alert("Power BI Data Model exported! Opening file. In Power BI Desktop: Click Get Data and choose this file to import all cleaned tables.");
-    }}
+    }
 
     async function generateAndOpenReport(type) {
       if (!activeDatasetId) { alert("Please select a dataset first."); return; }
@@ -666,30 +831,28 @@ def serve_dashboard():
           })
         });
         const rep = await res.json();
-        stat.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${type.toUpperCase()} successfully generated! <a href="${rep.download_url}" target="_blank" class="underline font-bold text-white ml-2">Click to Open/Download</a>`;
-        
-        // Automatically open the generated file in a new tab/application
+        stat.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${type.toUpperCase()} generated! <a href="${rep.download_url}" target="_blank" class="underline font-bold text-white ml-2">Click to Open/Download</a>`;
         window.open(rep.download_url, '_blank');
       } catch (err) {
         stat.innerText = "Report generation failed: " + err.message;
       }
     }
 
-    // Direct Bootstrapping: Instantly render datasets from initial state
-    renderDatasetList();
-    if (activeDatasets && activeDatasets.length > 0) {
-      selectDataset(activeDatasets[0].id);
-    }
+    // Startup Session Initialization
+    window.addEventListener('DOMContentLoaded', async () => {
+      const savedToken = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
 
-    window.addEventListener('DOMContentLoaded', () => {
-      initAuth();
-    });
-    // Fallback trigger in case DOMContentLoaded already fired
-    setTimeout(() => {
-      if (!currentToken) {
-        initAuth();
+      if (savedToken && savedUser) {
+        currentToken = savedToken;
+        currentUser = JSON.parse(savedUser);
+        document.getElementById('authModal').classList.add('hidden');
+        document.getElementById('userEmail').innerText = currentUser.email;
+        await loadUserProjects();
+      } else {
+        document.getElementById('authModal').classList.remove('hidden');
       }
-    }, 500);
+    });
   </script>
 </body>
 </html>
