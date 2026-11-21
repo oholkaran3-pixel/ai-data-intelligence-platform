@@ -1,0 +1,16 @@
+transaction_id,product_category,region,revenue,units_sold,customer_rating,margin_pct
+1001,Electronics,North America,1200.5,3,4.8,0.32
+1002,Fashion,EMEA,89.9,2,4.1,0.58
+1003,Electronics,APAC,450.0,1,4.5,0.41
+1004,Home & Kitchen,North America,210.0,4,3.9,0.35
+1005,Cloud Services,EMEA,3400.0,10,4.9,0.78
+1006,Books & Media,LATAM,45.0,1,4.2,0.25
+1007,Electronics,North America,1200.5,3,4.8,0.32
+1008,Fashion,APAC,299.0,3,4.6,0.6
+1009,Cloud Services,North America,5600.0,15,4.9,0.8
+1010,Home & Kitchen,EMEA,180.0,2,3.8,0.3
+1011,Books & Media,North America,75.0,2,4.4,0.28
+1012,Electronics,EMEA,950.0,2,4.7,0.34
+1013,Cloud Services,APAC,4200.0,12,4.8,0.75
+1014,Fashion,North America,450.0,4,4.3,0.55
+1015,Home & Kitchen,APAC,320.0,3,4.0,0.33
