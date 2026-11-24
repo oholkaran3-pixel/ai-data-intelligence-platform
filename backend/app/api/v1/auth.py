@@ -32,18 +32,18 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-
-    # Automatically provision a private default workspace for this new user
+    
+    # Automatically initialize a private workspace for the new user
     from app.models.models import Project
-    default_project = Project(
+    default_proj = Project(
         title=f"{new_user.full_name}'s Private Workspace",
-        description="Default private workspace with zero cross-tenant access",
+        description="Isolated analytical workspace for datasets and reports.",
         owner_id=new_user.id
     )
-    db.add(default_project)
+    db.add(default_proj)
     db.commit()
-    db.refresh(default_project)
-    
+    db.refresh(default_proj)
+
     # Record Activity History
     activity = ActivityHistory(
         user_id=new_user.id,

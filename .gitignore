@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.env.*
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Storage artifacts & private uploads
+backend/storage/*.db
+backend/storage/uploads/*
+backend/storage/parquet/*
+backend/storage/reports/*
+!backend/storage/uploads/.gitkeep
+!backend/storage/parquet/.gitkeep
+!backend/storage/reports/.gitkeep
+
+# Testing & temporary debug scripts
+test_*.py
+test_*.js
+debug_*.js
+*.log

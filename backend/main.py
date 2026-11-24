@@ -42,11 +42,10 @@ app.include_router(powerbi_api.router, prefix=settings.API_V1_STR)
 app.include_router(history.router, prefix=settings.API_V1_STR)
 app.include_router(admin.router, prefix=settings.API_V1_STR)
 
-# Production Self-Contained Interactive Dashboard Portal
+# Production Interactive Portal with Real Multi-Tenant Auth
 @app.get("/", response_class=HTMLResponse)
 def serve_dashboard():
-    return """
-<!DOCTYPE html>
+    return """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -63,89 +62,89 @@ def serve_dashboard():
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- ================= AUTHENTICATION MODAL OVERLAY ================= -->
-  <div id="authModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative">
-      <div class="flex items-center space-x-3 mb-6">
-        <div class="h-12 w-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg shadow-blue-500/30">
+  <!-- ================= AUTH MODAL (LOGIN & REGISTRATION) ================= -->
+  <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md px-4">
+    <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+      <!-- Glow effect -->
+      <div class="absolute -top-16 -left-16 w-36 h-36 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-16 -right-16 w-36 h-36 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="flex items-center space-x-3 mb-6 relative">
+        <div class="h-11 w-11 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg shadow-blue-500/30">
           <i class="fa-solid fa-brain"></i>
         </div>
         <div>
-          <h2 class="text-xl font-bold text-white tracking-tight">AI Data Intelligence</h2>
-          <p class="text-xs text-slate-400">Secure Multi-Tenant SaaS Workspace</p>
+          <h2 class="text-lg font-bold text-white tracking-tight">AI Data Intelligence</h2>
+          <p class="text-[11px] text-slate-400">Enterprise Data Analytics & Multi-Agent BI</p>
         </div>
       </div>
 
-      <!-- Auth Mode Switcher Tabs -->
-      <div class="flex border-b border-slate-800 mb-6">
-        <button id="tabLogin" onclick="switchAuthTab('login')" class="flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-blue-400 border-b-2 border-blue-500 transition">
+      <!-- Auth Switch Tabs -->
+      <div class="flex border-b border-slate-800 mb-6 relative">
+        <button id="tabLogin" onclick="switchAuthMode('login')" class="flex-1 pb-3 font-semibold text-xs transition border-b-2 border-blue-500 text-blue-400">
           Sign In
         </button>
-        <button id="tabRegister" onclick="switchAuthTab('register')" class="flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition">
+        <button id="tabRegister" onclick="switchAuthMode('register')" class="flex-1 pb-3 font-semibold text-xs transition border-b-2 border-transparent text-slate-400 hover:text-slate-200">
           Create Account
         </button>
       </div>
 
-      <!-- Error / Notice Box -->
-      <div id="authErrorMsg" class="hidden mb-4 p-3 bg-rose-950/50 border border-rose-500/40 rounded-xl text-xs text-rose-300 flex items-center space-x-2">
-        <i class="fa-solid fa-circle-exmark"></i>
-        <span id="authErrorText">Invalid credentials</span>
-      </div>
+      <!-- Form Error / Success Notification -->
+      <div id="authNotice" class="hidden mb-4 p-3 rounded-xl text-xs border"></div>
 
-      <!-- Form -->
-      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-        <div id="fullNameGroup" class="hidden">
-          <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Full Name</label>
-          <input type="text" id="authFullName" placeholder="e.g. Sarah Jenkins" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500" />
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4 relative">
+        <div id="nameFieldGroup" class="hidden">
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Full Name</label>
+          <input type="text" id="authFullName" placeholder="e.g. Karan Ohol" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition" />
         </div>
 
         <div>
-          <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Corporate Email</label>
-          <input type="email" id="authEmail" value="admin@intel.ai" required placeholder="name@company.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500" />
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Work Email</label>
+          <input type="email" id="authEmail" required placeholder="analyst@company.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition" />
         </div>
 
         <div>
-          <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
-          <input type="password" id="authPassword" value="AdminPassword123!" required placeholder="Enter password" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500" />
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
+          <input type="password" id="authPassword" required placeholder="••••••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition" />
         </div>
 
-        <button type="submit" id="authSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/30 mt-6">
-          <span id="authSubmitText">Access Private Workspace</span>
-          <i class="fa-solid fa-arrow-right"></i>
+        <button type="submit" id="authSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/30 mt-2">
+          <span id="authBtnLabel">Access Private Workspace</span>
+          <i class="fa-solid fa-arrow-right text-[11px]"></i>
         </button>
       </form>
 
-      <div class="mt-6 pt-4 border-t border-slate-800/80 text-[11px] text-slate-500 text-center">
-        <i class="fa-solid fa-lock text-emerald-400 mr-1"></i> Data Isolation Guaranteed · Zero Cross-Tenant Access
+      <div class="mt-6 pt-4 border-t border-slate-800/80 text-[11px] text-slate-500 text-center flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+        <span>100% Private Isolated Workspace per Account</span>
       </div>
     </div>
   </div>
 
   <!-- ================= TOP NAVIGATION BAR ================= -->
-  <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur px-8 py-4 flex items-center justify-between sticky top-0 z-40">
+  <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur px-8 py-3.5 flex items-center justify-between sticky top-0 z-40">
     <div class="flex items-center space-x-3">
-      <div class="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-blue-500/20">
+      <div class="h-9 w-9 bg-blue-600 rounded-xl flex items-center justify-center text-white text-base shadow-lg shadow-blue-500/20">
         <i class="fa-solid fa-brain"></i>
       </div>
       <div>
-        <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+        <h1 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
           AI Data Intelligence Platform
-          <span class="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono">v1.0 ONLINE</span>
+          <span class="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono">SAAS SECURE</span>
         </h1>
-        <p class="text-xs text-slate-400">Autonomous Ingestion, Profiling, DuckDB Analytics & Multi-Agent BI</p>
+        <p class="text-[11px] text-slate-400">Autonomous Ingestion, Profiling, DuckDB Analytics & Multi-Agent BI</p>
       </div>
     </div>
     
     <div class="flex items-center space-x-4">
-      <div id="authStatus" class="text-xs text-slate-300 bg-slate-800/80 px-3.5 py-1.5 rounded-lg border border-slate-700 flex items-center space-x-2">
-        <i class="fa-solid fa-user-shield text-blue-400"></i>
-        <span>User: <strong id="userEmail" class="text-white">Connecting...</strong></span>
+      <div id="authStatusBadge" class="text-xs text-slate-300 bg-slate-800/80 px-3.5 py-1.5 rounded-xl border border-slate-700 flex items-center gap-2">
+        <i class="fa-solid fa-user-check text-emerald-400"></i>
+        <span>Account: <strong id="headerUserEmail" class="text-white">--</strong></span>
+        <button onclick="handleLogout()" title="Logout" class="ml-2 text-rose-400 hover:text-rose-300 text-[11px] font-semibold border-l border-slate-700 pl-2 transition">
+          <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
+        </button>
       </div>
-      <button onclick="handleUserLogout()" class="text-xs text-rose-400 hover:text-rose-300 bg-slate-800/80 hover:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center space-x-1.5">
-        <i class="fa-solid fa-right-from-bracket"></i>
-        <span>Sign Out</span>
-      </button>
-      <a href="/docs" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+      <a href="/docs" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-xl border border-slate-700 transition">
         <i class="fa-solid fa-book mr-1 text-slate-400"></i> API Docs
       </a>
     </div>
@@ -153,13 +152,16 @@ def serve_dashboard():
 
   <!-- ================= MAIN WORKSPACE CANVAS ================= -->
   <div class="flex-1 flex overflow-hidden">
-    <!-- Sidebar -->
+    <!-- Sidebar: Workspaces & Data Ingest -->
     <aside class="w-80 border-r border-slate-800 bg-slate-900/40 p-5 flex flex-col justify-between overflow-y-auto custom-scroll">
       <div class="space-y-6">
         <div>
-          <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Active Workspace</h2>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Workspace</h2>
+            <span class="text-[10px] text-blue-400 font-mono" id="workspaceCount">1 Project</span>
+          </div>
           <select id="projectSelect" onchange="onWorkspaceChange()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-            <!-- Dynamically populated per user -->
+            <!-- Dynamically populated per authenticated user -->
           </select>
         </div>
 
@@ -186,7 +188,7 @@ def serve_dashboard():
               <span>Upload & Analyze Dataset</span>
             </button>
           </div>
-          <div id="uploadFeedback" class="text-[11px] text-emerald-400 mt-2 hidden"></div>
+          <div id="uploadFeedback" class="text-[11px] mt-2 hidden"></div>
         </div>
 
         <!-- Verified Datasets Switcher -->
@@ -196,13 +198,14 @@ def serve_dashboard():
             <span class="text-[10px] text-slate-500">Click to switch</span>
           </div>
           <div id="datasetList" class="space-y-2">
-            <!-- Dynamically populated -->
+            <!-- Dynamically populated for this user only -->
           </div>
         </div>
       </div>
 
-      <div class="pt-4 border-t border-slate-800/80 text-[11px] text-slate-500">
-        <i class="fa-solid fa-shield-halved text-emerald-400 mr-1"></i> Isolated Workspace Storage
+      <div class="pt-4 border-t border-slate-800/80 text-[11px] text-slate-500 flex items-center gap-1.5">
+        <i class="fa-solid fa-lock text-emerald-400"></i>
+        <span>User-Specific Data Isolation Enforced</span>
       </div>
     </aside>
 
@@ -250,7 +253,7 @@ def serve_dashboard():
         </div>
       </div>
 
-      <!-- Tabular Data Preview Modal/Accordion -->
+      <!-- Tabular Data Preview Accordion -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
         <div class="flex items-center justify-between cursor-pointer" onclick="toggleDataPreview()">
           <div class="flex items-center space-x-2.5">
@@ -259,7 +262,7 @@ def serve_dashboard():
             </div>
             <div>
               <h2 class="text-sm font-bold text-white">Live Tabular Data Inspector</h2>
-              <p class="text-[11px] text-slate-400">Preview raw & parsed columns directly in the browser</p>
+              <p class="text-[11px] text-slate-400">Preview parsed columns and rows directly in the browser</p>
             </div>
           </div>
           <button class="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1">
@@ -296,7 +299,7 @@ def serve_dashboard():
           <input 
             type="text" 
             id="aiInput" 
-            placeholder="Ask a question about the active dataset (e.g. 'Average Red Bull sales by coolers', 'Show total records', 'Distribution')" 
+            placeholder="Ask a question about the active dataset (e.g. 'Show total records', 'Average sales by category', 'Distribution')" 
             class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" 
             onkeydown="if(event.key==='Enter') askAI()"
           />
@@ -366,157 +369,191 @@ def serve_dashboard():
   </div>
 
   <script>
-    let currentToken = localStorage.getItem('token') || null;
+    let currentToken = localStorage.getItem("token") || null;
     let currentUser = null;
-    let authMode = 'login';
-    let userProjects = [];
+    try {
+      const uStr = localStorage.getItem("user");
+      if (uStr) currentUser = JSON.parse(uStr);
+    } catch(e) {}
+
+    let currentWorkspaces = [];
     let activeProjectId = null;
     let activeDatasetId = null;
     let activeDatasets = [];
     let chatMemory = {};
+    let authMode = "login";
 
-    function switchAuthTab(mode) {
+    // Switch between Login and Register tabs
+    function switchAuthMode(mode) {
       authMode = mode;
-      const tabLogin = document.getElementById('tabLogin');
-      const tabRegister = document.getElementById('tabRegister');
-      const fullNameGroup = document.getElementById('fullNameGroup');
-      const submitText = document.getElementById('authSubmitText');
-      const errorBox = document.getElementById('authErrorMsg');
-      errorBox.classList.add('hidden');
+      const tabL = document.getElementById("tabLogin");
+      const tabR = document.getElementById("tabRegister");
+      const nameGrp = document.getElementById("nameFieldGroup");
+      const btnLabel = document.getElementById("authBtnLabel");
+      const notice = document.getElementById("authNotice");
+      notice.className = "hidden";
 
-      if (mode === 'login') {
-        tabLogin.className = "flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-blue-400 border-b-2 border-blue-500 transition";
-        tabRegister.className = "flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition";
-        fullNameGroup.classList.add('hidden');
-        submitText.innerText = "Access Private Workspace";
+      if (mode === "register") {
+        tabR.className = "flex-1 pb-3 font-semibold text-xs transition border-b-2 border-blue-500 text-blue-400";
+        tabL.className = "flex-1 pb-3 font-semibold text-xs transition border-b-2 border-transparent text-slate-400 hover:text-slate-200";
+        nameGrp.classList.remove("hidden");
+        btnLabel.innerText = "Create Isolated Account";
       } else {
-        tabRegister.className = "flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-blue-400 border-b-2 border-blue-500 transition";
-        tabLogin.className = "flex-1 pb-3 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-300 transition";
-        fullNameGroup.classList.remove('hidden');
-        submitText.innerText = "Create New Account & Private Workspace";
+        tabL.className = "flex-1 pb-3 font-semibold text-xs transition border-b-2 border-blue-500 text-blue-400";
+        tabR.className = "flex-1 pb-3 font-semibold text-xs transition border-b-2 border-transparent text-slate-400 hover:text-slate-200";
+        nameGrp.classList.add("hidden");
+        btnLabel.innerText = "Access Private Workspace";
       }
     }
 
+    // Handle Login or Registration
     async function handleAuthSubmit(e) {
       e.preventDefault();
-      const email = document.getElementById('authEmail').value.trim();
-      const password = document.getElementById('authPassword').value;
-      const fullName = document.getElementById('authFullName').value.trim();
-      const errorBox = document.getElementById('authErrorMsg');
-      const errorText = document.getElementById('authErrorText');
-      const submitBtn = document.getElementById('authSubmitBtn');
+      const email = document.getElementById("authEmail").value.trim();
+      const password = document.getElementById("authPassword").value.trim();
+      const fullName = document.getElementById("authFullName").value.trim();
+      const notice = document.getElementById("authNotice");
+      const btn = document.getElementById("authSubmitBtn");
 
-      errorBox.classList.add('hidden');
-      submitBtn.disabled = true;
+      notice.className = "hidden";
+      btn.disabled = true;
+      btn.classList.add("opacity-50");
 
       try {
-        const endpoint = authMode === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/register';
-        const payload = authMode === 'login' 
-          ? { email, password } 
-          : { email, password, full_name: fullName || email.split('@')[0], role: 'regular_user' };
+        const endpoint = authMode === "login" ? "/api/v1/auth/login" : "/api/v1/auth/register";
+        const payload = authMode === "login" ? { email, password } : { email, password, full_name: fullName || email.split("@")[0] };
 
         const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
 
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.detail || 'Authentication failed');
+          throw new Error(data.detail || "Authentication failed");
         }
 
         currentToken = data.access_token;
         currentUser = data.user;
-        localStorage.setItem('token', currentToken);
-        localStorage.setItem('user', JSON.stringify(currentUser));
+        localStorage.setItem("token", currentToken);
+        localStorage.setItem("user", JSON.stringify(currentUser));
 
-        // Hide Modal and Load User's Private Workspace
-        document.getElementById('authModal').classList.add('hidden');
-        document.getElementById('userEmail').innerText = currentUser.email;
-        await loadUserProjects();
+        notice.className = "mb-4 p-3 rounded-xl text-xs bg-emerald-950/40 border border-emerald-800 text-emerald-400";
+        notice.innerText = authMode === "login" ? "Login successful! Loading workspace..." : "Account created! Initializing private workspace...";
+
+        setTimeout(() => {
+          document.getElementById("authModal").classList.add("hidden");
+          startUserSession();
+        }, 600);
+
       } catch (err) {
-        errorBox.classList.remove('hidden');
-        errorText.innerText = err.message;
+        notice.className = "mb-4 p-3 rounded-xl text-xs bg-rose-950/40 border border-rose-800 text-rose-400";
+        notice.innerText = err.message;
       } finally {
-        submitBtn.disabled = false;
+        btn.disabled = false;
+        btn.classList.remove("opacity-50");
       }
     }
 
-    function handleUserLogout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+    function handleLogout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       currentToken = null;
       currentUser = null;
-      userProjects = [];
-      activeProjectId = null;
       activeDatasets = [];
       activeDatasetId = null;
+      currentWorkspaces = [];
+      activeProjectId = null;
       chatMemory = {};
-
-      // Reset UI to clean state
-      document.getElementById('datasetList').innerHTML = '';
-      document.getElementById('metricScore').innerText = '--';
-      document.getElementById('metricGrade').innerText = 'Awaiting dataset selection';
-      document.getElementById('metricRows').innerText = '--';
-      document.getElementById('metricCols').innerText = '-- Columns';
-      document.getElementById('metricFormat').innerText = '--';
-      document.getElementById('metricVersion').innerText = 'Current Version: v1';
-      document.getElementById('aiChatFeed').innerHTML = '';
-      document.getElementById('plotlyChartContainer').classList.add('hidden');
-      document.getElementById('dataPreviewBox').classList.add('hidden');
-
-      // Show Auth Modal
-      document.getElementById('authModal').classList.remove('hidden');
+      
+      document.getElementById("headerUserEmail").innerText = "--";
+      document.getElementById("authModal").classList.remove("hidden");
+      switchAuthMode("login");
+      resetCanvasToBlank();
     }
 
-    async function loadUserProjects() {
-      if (!currentToken) return;
-      try {
-        const res = await fetch('/api/v1/projects', {
-          headers: { 'Authorization': `Bearer ${currentToken}` }
-        });
-        userProjects = await res.json();
-        const sel = document.getElementById('projectSelect');
-        sel.innerHTML = '';
+    function resetCanvasToBlank() {
+      document.getElementById("metricScore").innerText = "--";
+      document.getElementById("metricGrade").innerText = "Awaiting dataset selection";
+      document.getElementById("metricRows").innerText = "--";
+      document.getElementById("metricCols").innerText = "-- Columns";
+      document.getElementById("metricFormat").innerText = "--";
+      document.getElementById("metricVersion").innerText = "Current Version: v1";
+      document.getElementById("datasetList").innerHTML = '<div class="text-[11px] text-slate-500 italic p-2 bg-slate-950/30 rounded-lg">No datasets uploaded in this workspace.</div>';
+      document.getElementById("aiChatFeed").innerHTML = "";
+      document.getElementById("plotlyChartContainer").classList.add("hidden");
+      document.getElementById("previewTable").innerHTML = "";
+    }
 
-        if (!userProjects || userProjects.length === 0) {
-          // Auto create a project if user doesn't have one
-          const newProjRes = await fetch('/api/v1/projects', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` },
-            body: JSON.stringify({ title: 'My Analytics Project', description: 'Private Workspace' })
+    // Bootstrap user workspace and datasets after authentication
+    async function startUserSession() {
+      if (!currentToken || !currentUser) {
+        document.getElementById("authModal").classList.remove("hidden");
+        return;
+      }
+
+      document.getElementById("authModal").classList.add("hidden");
+      document.getElementById("headerUserEmail").innerText = currentUser.email;
+
+      // Load user projects
+      try {
+        const res = await fetch("/api/v1/projects", {
+          headers: { "Authorization": `Bearer ${currentToken}` }
+        });
+        if (res.status === 401) {
+          handleLogout();
+          return;
+        }
+        currentWorkspaces = await res.json();
+        
+        const sel = document.getElementById("projectSelect");
+        sel.innerHTML = "";
+        
+        if (currentWorkspaces.length === 0) {
+          // If for any reason no project exists, create one on the fly
+          const pRes = await fetch("/api/v1/projects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${currentToken}` },
+            body: JSON.stringify({ title: `${currentUser.full_name || 'My'}'s Private Workspace`, description: "Default private workspace" })
           });
-          const createdProj = await newProjRes.json();
-          userProjects = [createdProj];
+          const newP = await pRes.json();
+          currentWorkspaces = [newP];
         }
 
-        userProjects.forEach(p => {
-          const opt = document.createElement('option');
+        currentWorkspaces.forEach(p => {
+          const opt = document.createElement("option");
           opt.value = p.id;
           opt.innerText = p.title;
           sel.appendChild(opt);
         });
 
-        activeProjectId = userProjects[0].id;
+        document.getElementById("workspaceCount").innerText = `${currentWorkspaces.length} Project${currentWorkspaces.length > 1 ? 's' : ''}`;
+        activeProjectId = currentWorkspaces[0].id;
+
         await loadDatasets();
-      } catch (err) {
-        console.error("Error loading user projects:", err);
+
+      } catch (e) {
+        console.error("Workspace initialization error:", e);
       }
     }
 
     async function onWorkspaceChange() {
-      const sel = document.getElementById('projectSelect');
+      const sel = document.getElementById("projectSelect");
       activeProjectId = parseInt(sel.value);
       await loadDatasets();
     }
 
     async function loadDatasets(preferredDatasetId = null) {
-      if (!currentToken || !activeProjectId) return;
+      if (!activeProjectId || !currentToken) return;
       try {
         const res = await fetch(`/api/v1/datasets?project_id=${activeProjectId}`, {
           headers: { 'Authorization': `Bearer ${currentToken}` }
         });
+        if (res.status === 401) {
+          handleLogout();
+          return;
+        }
         activeDatasets = await res.json();
         renderDatasetList();
 
@@ -524,15 +561,7 @@ def serve_dashboard():
           const targetId = preferredDatasetId || activeDatasets[0].id;
           selectDataset(targetId);
         } else {
-          // Clean canvas when project has no datasets
-          activeDatasetId = null;
-          document.getElementById('metricScore').innerText = '--';
-          document.getElementById('metricGrade').innerText = 'No datasets uploaded in this workspace';
-          document.getElementById('metricRows').innerText = '0';
-          document.getElementById('metricCols').innerText = '0 Columns';
-          document.getElementById('metricFormat').innerText = 'None';
-          document.getElementById('aiChatFeed').innerHTML = '<div class="text-[11px] text-slate-500 italic p-3 bg-slate-950/40 border border-slate-800/50 rounded-xl">Upload a dataset to start autonomous analysis.</div>';
-          document.getElementById('plotlyChartContainer').classList.add('hidden');
+          resetCanvasToBlank();
         }
       } catch (e) {
         console.error("Failed to load datasets:", e);
@@ -544,7 +573,7 @@ def serve_dashboard():
       if (!el) return;
       el.innerHTML = '';
       if (!activeDatasets || activeDatasets.length === 0) {
-        el.innerHTML = '<div class="text-[11px] text-slate-500 italic p-2 bg-slate-950/30 rounded-lg">No datasets uploaded yet. Click Choose File above.</div>';
+        el.innerHTML = '<div class="text-[11px] text-slate-500 italic p-2 bg-slate-950/30 rounded-lg">No datasets in this workspace. Upload your first dataset above!</div>';
         return;
       }
       activeDatasets.forEach(d => {
@@ -707,6 +736,7 @@ def serve_dashboard():
         fb.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Successfully Analyzed <b>${newD.name}</b> (${newD.quality_score}% Quality, ${newD.row_count} rows)`;
         
         input.value = '';
+
         await loadDatasets(newD.id);
       } catch (err) {
         fb.className = "text-[11px] text-rose-400 mt-2 p-2 bg-rose-950/40 border border-rose-800/50 rounded-lg";
@@ -751,7 +781,6 @@ def serve_dashboard():
         }
         chatMemory[activeDatasetId].unshift(data);
         renderChatFeedForActiveDataset();
-        input.value = '';
       } catch (err) {
         alert("AI Assistant error: " + err.message);
       } finally {
@@ -838,22 +867,11 @@ def serve_dashboard():
       }
     }
 
-    // Startup Session Initialization
-    window.addEventListener('DOMContentLoaded', async () => {
-      const savedToken = localStorage.getItem('token');
-      const savedUser = localStorage.getItem('user');
-
-      if (savedToken && savedUser) {
-        currentToken = savedToken;
-        currentUser = JSON.parse(savedUser);
-        document.getElementById('authModal').classList.add('hidden');
-        document.getElementById('userEmail').innerText = currentUser.email;
-        await loadUserProjects();
-      } else {
-        document.getElementById('authModal').classList.remove('hidden');
-      }
+    // Initialize session check on load
+    window.addEventListener('DOMContentLoaded', () => {
+      startUserSession();
     });
   </script>
 </body>
 </html>
-    """
+"""
